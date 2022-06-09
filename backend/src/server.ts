@@ -8,7 +8,8 @@ const app = createApp({
 });
 app.listen({ port }, (err, address) => {
   if (err) {
-    throw err;
+    app.log.error(err);
+    process.exit(1);
   }
   app.log.info(`Listening on ${address}`);
 });
