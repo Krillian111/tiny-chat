@@ -1,14 +1,14 @@
-# TODOs
+# TO DOs
 
-## Cleanup / Improvements
+## Possible Cleanup / Improvements
 
 - integrate public key validation into fastify's validation framework
-- (de)serialize websocket messages with fastify's serialization library
+- (de)serialize websocket messages with fastify's serialization library instead of `JSON.parse`
 
 ## Next
 
-- exit handler
-- get-users handler
+- message handler
+- broadcast users joining/exiting to all
 
 ## Finishing touches
 

@@ -1,32 +1,16 @@
-import { randomUUID } from "node:crypto";
-import { MessageHandler, Message, ErrorMessage } from "../chat.types";
-import { isJoinEvent, JoinPayload, validateJoinPayload } from "./join.validation";
+import { Message, RegisterOnClose, ServerMessage } from "../chat.types";
+import { userRepo } from "../persistence";
+import { JoinPayload } from "./join.validation";
 
-function match(msg: unknown): msg is Message<"join"> {
-  return isJoinEvent(msg);
-}
-
-function validate(payload: unknown): undefined | ErrorMessage<"join-response"> {
-  return validateJoinPayload(payload);
-}
-
-interface User {
-  userName: string;
-  userId: string;
-  publicKey: string;
-}
-
-const lobby: User[] = [];
-
-function handle(msg: Message<"join">): Message<"join-response"> {
-  const userId = randomUUID();
+export function handle(msg: Message<"join">, registerOnClose: RegisterOnClose): ServerMessage<"join-response"> {
   const { userName, publicKey } = msg.payload as JoinPayload;
-  lobby.push({ userName, userId, publicKey });
-  return { type: "join-response", payload: { userName, userId } };
-}
+  const addedUserOrError = userRepo.addToLobby(userName, publicKey);
 
-export const join: MessageHandler<"join", "join-response"> = {
-  match,
-  validate,
-  handle,
-};
+  if (typeof addedUserOrError === "string") {
+    return { type: "join-response", error: [addedUserOrError] };
+  }
+  registerOnClose(() => {
+    userRepo.removeFromLobby(addedUserOrError.userId);
+  });
+  return { type: "join-response", payload: { userId: addedUserOrError.userId, userName: addedUserOrError.userName } };
+}

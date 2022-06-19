@@ -1,5 +1,6 @@
 import WebSocket from "ws";
 import createApp from "../../../src/app";
+import { ClientMessage } from "../../../src/chat/chat.types";
 
 export function setupAppWithWebsocket(wsAddressSetter: (string) => void) {
   const app = createApp({});
@@ -17,6 +18,20 @@ export function setupAppWithWebsocket(wsAddressSetter: (string) => void) {
   });
 }
 
-export function sendSerialized(ws: WebSocket, msg: unknown) {
+export function sendSerialized(ws: WebSocket, msg: ClientMessage<string>) {
   ws.send(JSON.stringify(msg));
+}
+
+export async function assertMessageOnce(ws: WebSocket, assertParsedMessage: (msg: unknown) => void) {
+  return new Promise<void>((resolve, reject) => {
+    ws.once("message", (msg) => {
+      const parsedMsg = JSON.parse(msg.toString("utf-8"));
+      try {
+        assertParsedMessage(parsedMsg);
+      } catch (e) {
+        reject(e);
+      }
+      resolve();
+    });
+  });
 }

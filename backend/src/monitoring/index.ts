@@ -1,7 +1,7 @@
-import { FastifyPluginCallback } from "fastify";
+import { FastifyPluginCallback, FastifyPluginOptions } from "fastify";
 import handleHealthcheck from "./healthcheck";
 
-const monitoring: FastifyPluginCallback<{}> = (fastify, {}, done) => {
+const monitoring: FastifyPluginCallback<FastifyPluginOptions> = (fastify, {}, done) => {
   fastify.get("/monitoring/health", handleHealthcheck);
   done();
 };

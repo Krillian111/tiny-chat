@@ -10,8 +10,10 @@ Inspired by [tinyprojects.dev](https://tinyprojects.dev/) I wanted to build a ve
   - (?) the built-in test functionality with `fastify.inject` looks like an interesting middleground between unit tests and tests with a running server. It feels like I am duplicating my integration tests without getting the assurance of having tested actually calling my API, so I am not 100% sure at this point.
 - only write integration tests (skip unit tests) to see whether this is a decent compromise for prototyping
 - design the chat API via messages within the websocket connection
-  - feels a bit hacky as of now as I am implementing some "unnecessary" stuff from scratch (serialization, validation)
+  - feels a bit hacky as of now as I am implementing some of the nuts and bolts (serialization, validation) more manually than I would for REST.
   - cannot leverage input/schema validation of `fastify`
+- experiment with new new project file structure
+- delay persistence layer implementation as long as possible
 
 ## Requirements
 
