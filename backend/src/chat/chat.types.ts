@@ -1,11 +1,20 @@
-export interface Message<Type extends string> {
+export interface Message<Type extends string, Payload = unknown> {
   type: Type;
-  payload?: unknown;
+  payload: Payload;
 }
 
 export interface SignedMessage<Type extends string> extends Message<Type> {
   payload: { userId: string };
   signature: string;
+}
+
+export type SignedMessageTypeGuard<Type extends string> = (msgToTest: unknown) => msgToTest is SignedMessage<Type>;
+
+export function isSignedMessage<Type extends string>(messageType: Type): SignedMessageTypeGuard<Type> {
+  return (msgToTest: unknown): msgToTest is SignedMessage<Type> => {
+    const msg = msgToTest as SignedMessage<Type>;
+    return msg?.type === messageType && !!msg.payload && typeof msg.signature === "string";
+  };
 }
 
 export interface ErrorMessage<Type extends string> {
@@ -15,7 +24,7 @@ export interface ErrorMessage<Type extends string> {
 
 export type ClientMessage<Type extends string> = Message<Type> | SignedMessage<Type>;
 
-export type ServerMessage<Type extends string> = Message<Type> | ErrorMessage<Type>;
+export type ServerMessage<Type extends string, Payload = unknown> = Message<Type, Payload> | ErrorMessage<Type>;
 
 export type RegisterOnClose = (onCloseCb: () => void) => void;
 

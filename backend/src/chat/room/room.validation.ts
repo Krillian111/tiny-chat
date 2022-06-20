@@ -1,10 +1,7 @@
 import { ajv } from "../../common/validation";
-import { ErrorMessage, SignedMessage } from "../chat.types";
+import { ErrorMessage, isSignedMessage, SignedMessageTypeGuard } from "../chat.types";
 
-export function isRoomEvent(msgToTest: unknown): msgToTest is SignedMessage<"room"> {
-  const msg = msgToTest as SignedMessage<"room">;
-  return msg?.type === "room" && !!msg.payload && typeof msg.signature === "string";
-}
+export const isRoomEvent: SignedMessageTypeGuard<"room"> = isSignedMessage("room");
 
 const roomPayloadSchema = {
   type: "object",

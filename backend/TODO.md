@@ -7,8 +7,8 @@
 
 ## Next
 
-- message handler
 - broadcast users joining/exiting to all
+- enforce unique user names
 
 ## Finishing touches
 

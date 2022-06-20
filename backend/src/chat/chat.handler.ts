@@ -3,8 +3,9 @@ import { FastifyRequest } from "fastify";
 import { MessageHandler } from "./chat.types";
 import join from "./join";
 import room from "./room";
+import send from "./send";
 
-const chatMessageHandler: MessageHandler<string, string>[] = [join, room];
+const chatMessageHandler: MessageHandler<string, string>[] = [join, room, send];
 
 export default function chatHandler(connection: SocketStream, _req: FastifyRequest) {
   const send = (message: unknown) => connection.socket.send(JSON.stringify(message));

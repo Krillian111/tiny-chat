@@ -1,10 +1,10 @@
 import { once } from "events";
-import nodeCrypto from "node:crypto";
 import WebSocket from "ws";
 import { ErrorMessage, Message } from "../../../src/chat/chat.types";
-import { expectNoErrorsInMessage } from "../util/expectations";
+import { expectJoinSuccess } from "../util/expectations";
 import { assertMessageOnce, sendSerialized, setupAppWithWebsocket } from "../util/websocket";
 import { testOnly } from "../../../src/common/crypto";
+import { JoinResponse } from "../../../src/chat/join/join.handler";
 
 const { generateKeys, signPayload } = testOnly;
 
@@ -42,7 +42,7 @@ describe("/chat (room)", () => {
       const ws = new WebSocket(wsAddress);
       wsToCleanUp.push(ws);
       const assertion = assertMessageOnce(ws, (roomResponse: ErrorMessage<"room-response">) => {
-        expect(roomResponse.type).toEqual("room-response");
+        expect(roomResponse).toEqual({ type: "room-response", error: ["User not in lobby"] });
         expect(roomResponse.error).toBeTruthy();
       });
 
@@ -52,25 +52,23 @@ describe("/chat (room)", () => {
       await assertion;
     });
     it("fails if payload is not signed with matching privateKey", async () => {
-      const userId = "invalid-sig-userId";
+      let userId;
       const userName = "invalid-sig-userName";
       const passphrase = "some-password";
       const { publicKey } = await generateKeys(passphrase);
       const { privateKey: unknownPrivateKey } = await generateKeys(passphrase);
-      jest.spyOn(nodeCrypto, "randomUUID").mockReturnValueOnce(userId);
 
       const ws1 = new WebSocket(wsAddress);
       wsToCleanUp.push(ws1);
       await once(ws1, "open");
 
       sendSerialized(ws1, { type: "join", payload: { publicKey, userName } });
-      await assertMessageOnce(ws1, (joinResponse: Message<"join-response">) => {
-        expect(joinResponse.type).toEqual("join-response");
-        expectNoErrorsInMessage(joinResponse);
+      await assertMessageOnce(ws1, (joinResponse: JoinResponse) => {
+        expectJoinSuccess(joinResponse);
+        userId = joinResponse.payload.userId;
       });
       const assertOneUser = assertMessageOnce(ws1, (roomResponse: ErrorMessage<"room-response">) => {
-        expect(roomResponse.type).toEqual("room-response");
-        expect(roomResponse.error).toBeTruthy();
+        expect(roomResponse).toEqual({ type: "room-response", error: ["Message contains invalid signature"] });
       });
       const payloadToSign = { userId };
       const signatureWithUnknownKey = await signPayload(payloadToSign, unknownPrivateKey, passphrase);
@@ -82,15 +80,13 @@ describe("/chat (room)", () => {
   describe("success", () => {
     it("returns current state of room if user is in a room", async () => {
       const passphrase = "some-password";
-      const userId1 = "userId1";
+      let userId1;
       const userName1 = "user1";
       const { publicKey: publicKey1, privateKey: privateKey1 } = await generateKeys(passphrase);
-      jest.spyOn(nodeCrypto, "randomUUID").mockReturnValueOnce(userId1);
 
-      const userId2 = "userId2";
+      let userId2;
       const userName2 = "user2";
       const { publicKey: publicKey2, privateKey: privateKey2 } = await generateKeys(passphrase);
-      jest.spyOn(nodeCrypto, "randomUUID").mockReturnValueOnce(userId2);
 
       const ws1 = new WebSocket(wsAddress);
       wsToCleanUp.push(ws1);
@@ -100,9 +96,9 @@ describe("/chat (room)", () => {
       await once(ws2, "open");
 
       sendSerialized(ws1, { type: "join", payload: { publicKey: publicKey1, userName: userName1 } });
-      await assertMessageOnce(ws1, (joinResponse: Message<"join-response">) => {
-        expect(joinResponse.type).toEqual("join-response");
-        expectNoErrorsInMessage(joinResponse);
+      await assertMessageOnce(ws1, (joinResponse: JoinResponse) => {
+        expectJoinSuccess(joinResponse);
+        userId1 = joinResponse.payload.userId;
       });
       const assertOneUser = assertMessageOnce(ws1, (roomResponse: Message<"room-response">) => {
         expect(roomResponse.type).toEqual("room-response");
@@ -114,9 +110,9 @@ describe("/chat (room)", () => {
       await assertOneUser;
 
       sendSerialized(ws2, { type: "join", payload: { publicKey: publicKey2, userName: userName2 } });
-      await assertMessageOnce(ws2, (joinResponse: Message<"join-response">) => {
-        expect(joinResponse.type).toEqual("join-response");
-        expectNoErrorsInMessage(joinResponse);
+      await assertMessageOnce(ws2, (joinResponse: JoinResponse) => {
+        expectJoinSuccess(joinResponse);
+        userId2 = joinResponse.payload.userId;
       });
       const assertTwoUsers = assertMessageOnce(ws2, (roomResponse: Message<"room-response">) => {
         expect(roomResponse.type).toEqual("room-response");

@@ -7,13 +7,17 @@ Inspired by [tinyprojects.dev](https://tinyprojects.dev/) I wanted to build a ve
 - `fastify` as a webserver
   - (+) built-in logging, schema-based validation, websocket support
   - (+) plugin system enables nicely modularized code
-  - (?) the built-in test functionality with `fastify.inject` looks like an interesting middleground between unit tests and tests with a running server. It feels like I am duplicating my integration tests without getting the assurance of having tested actually calling my API, so I am not 100% sure at this point.
+  - (?) the built-in test functionality with `fastify.inject` looks like an interesting middleground between unit tests and tests with a running server. It feels like I am duplicating my integration tests without getting the assurance of having tested actually calling my API, so I skipped it for now.
+    (-) fastify's websocket integration only seems to support the native `message` event and not custom events like the underlying `ws` library does
 - only write integration tests (skip unit tests) to see whether this is a decent compromise for prototyping
+  - (+) makes it very easy to shift around things
+  - (-) finding reason for a single test failing can be a bit more tedious
 - design the chat API via messages within the websocket connection
-  - feels a bit hacky as of now as I am implementing some of the nuts and bolts (serialization, validation) more manually than I would for REST.
-  - cannot leverage input/schema validation of `fastify`
-- experiment with new new project file structure
+  (-) feels a bit hacky as of now as I am implementing some of the nuts and bolts (serialization, validation) more manually than I would for REST.
+  (-) cannot leverage input/schema validation of `fastify`
+- experiment with new new project file structure and naming convention
 - delay persistence layer implementation as long as possible
+  (+) allows for collecting all the requirements before assessing what's the best fit
 
 ## Requirements
 
