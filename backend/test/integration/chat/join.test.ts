@@ -48,6 +48,23 @@ describe("/chat (join)", () => {
       client.send({ type: "join", payload: { publicKey, userName } });
       await assertFailure;
     });
+    it("only allows unique userName ", async () => {
+      const userName = "usernameA";
+      const client1 = await testClientBuilder.connect(userName);
+      const client2 = await testClientBuilder.connect(userName);
+      const { publicKey: publicKey1 } = client1;
+      const { publicKey: publicKey2 } = client2;
+      const assertSuccess1 = client1.assertMessageOnce((joinResponse: JoinResponse) => {
+        expect(joinResponse).toEqual({ type: "join-response", payload: { userId: expect.any(String), userName } });
+      });
+      client1.send({ type: "join", payload: { publicKey: publicKey1, userName } });
+      await assertSuccess1;
+      const assertFailure = client2.assertMessageOnce((joinResponse: ErrorMessage<"join-response">) => {
+        expect(joinResponse).toEqual({ type: "join-response", error: expect.any(Array) });
+      });
+      client2.send({ type: "join", payload: { publicKey: publicKey2, userName } });
+      await assertFailure;
+    });
   });
   describe("success", () => {
     it("accepts a websocket connection", async () => {

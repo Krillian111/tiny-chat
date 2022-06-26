@@ -6,7 +6,10 @@ const lobby: Map<UserId, User> = new Map();
 export function addUserToLobby(userName: string, publicKey: string): User | string {
   for (const user of lobby.values()) {
     if (user.publicKey === publicKey) {
-      return "User already in channel";
+      return "User already in channel!";
+    }
+    if (user.userName === userName) {
+      return `Username ${userName} already in use!`;
     }
   }
   const userId = randomUUID();
