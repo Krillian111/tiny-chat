@@ -8,6 +8,7 @@ const roomPayloadSchema = {
   required: ["userId"],
   properties: {
     userId: { type: "string" },
+    lastMessageId: { type: "string" },
   },
 };
 
@@ -22,4 +23,5 @@ export function validateRoomPayload(payload): undefined | ErrorMessage<"room-res
 
 export interface RoomPayload {
   userId: string;
+  lastMessageId?: string;
 }

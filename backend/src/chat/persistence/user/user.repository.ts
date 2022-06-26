@@ -27,6 +27,6 @@ export function getUsersFromLobby(): string[] {
   return names;
 }
 
-export function findPublicKeyInLobby(userId: string): string | undefined {
-  return lobby.get(userId)?.publicKey;
+export function findUser(userId: string): User | undefined {
+  return lobby.get(userId);
 }

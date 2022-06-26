@@ -1,50 +1,31 @@
 import { once } from "events";
-import nodeCrypto from "node:crypto";
-import WebSocket from "ws";
 import { ErrorMessage, Message } from "../../../src/chat/chat.types";
-import { assertMessageOnce, sendSerialized, setupAppWithWebsocket } from "../util/websocket";
-import { testOnly } from "../../../src/common/crypto";
+import { setupAppWithWebsocket } from "../util/websocket";
 import { JoinResponse } from "../../../src/chat/join/join.handler";
-import { expectJoinSuccess, expectValidationError } from "../util/expectations";
-import join from "../../../src/chat/join";
-
-const { generateKeys } = testOnly;
+import { expectValidationError } from "../util/expectations";
 
 describe("/chat (join)", () => {
-  let wsAddress: string;
-  let wsToCleanUp: WebSocket[] = [];
-  afterEach(async () => {
-    wsToCleanUp.forEach((ws) => ws.close());
-    wsToCleanUp = [];
-  });
-  setupAppWithWebsocket((address) => {
-    wsAddress = address;
-  });
+  const testClientBuilder = setupAppWithWebsocket();
   describe("validation", () => {
     it.each([undefined, null, 1234, {}])("rejects non-string userNames", async (invalidUserName) => {
-      const { publicKey } = await generateKeys("some-passphrase");
-      const ws = new WebSocket(wsAddress);
-      wsToCleanUp.push(ws);
+      const client = await testClientBuilder.connect("client-joining-with-invalid-userName");
 
-      const assertion = assertMessageOnce(ws, (joinResponse: ErrorMessage<"join-response">) => {
+      const assertion = client.assertMessageOnce((joinResponse: ErrorMessage<"join-response">) => {
         expectValidationError("join-response", joinResponse);
       });
-      await once(ws, "open");
-      sendSerialized(ws, { type: "join", payload: { publicKey, userName: invalidUserName } });
+      client.send({ type: "join", payload: { publicKey: client.publicKey, userName: invalidUserName } });
       await assertion;
     });
 
     it.each([undefined, null, 1234, {}, "invalid-public-key"])(
       "rejects invalid publicKey",
       async (invalidPublicKey) => {
-        const ws = new WebSocket(wsAddress);
-        wsToCleanUp.push(ws);
-        const assertion = assertMessageOnce(ws, (joinResponse: ErrorMessage<"join-response">) => {
+        const client = await testClientBuilder.connect("client-joining-with-invalid-publicKey");
+        const assertion = client.assertMessageOnce((joinResponse: ErrorMessage<"join-response">) => {
           expectValidationError("join-response", joinResponse);
         });
 
-        await once(ws, "open");
-        sendSerialized(ws, {
+        client.send({
           type: "join",
           payload: { publicKey: invalidPublicKey, userName: "some-user-name" },
         });
@@ -54,49 +35,36 @@ describe("/chat (join)", () => {
   });
   describe("errors", () => {
     it("only allows a user to join once", async () => {
-      const userId = "userId2";
-      const userName = "user2";
-      const { publicKey } = await generateKeys("some-password");
-      jest.spyOn(nodeCrypto, "randomUUID").mockReturnValueOnce(userId);
-
-      const ws = new WebSocket(wsAddress);
-      wsToCleanUp.push(ws);
-      await once(ws, "open");
-      const assertSuccess = assertMessageOnce(ws, (joinResponse: JoinResponse) => {
-        expect(joinResponse).toEqual({ type: "join-response", payload: { userId, userName } });
+      const client = await testClientBuilder.connect("client-trying-to-join-twice");
+      const { userName, publicKey } = client;
+      const assertSuccess = client.assertMessageOnce((joinResponse: JoinResponse) => {
+        expect(joinResponse).toEqual({ type: "join-response", payload: { userId: expect.any(String), userName } });
       });
-      sendSerialized(ws, { type: "join", payload: { publicKey, userName } });
+      client.send({ type: "join", payload: { publicKey, userName } });
       await assertSuccess;
-      const assertFailure = assertMessageOnce(ws, (joinResponse: ErrorMessage<"join-response">) => {
+      const assertFailure = client.assertMessageOnce((joinResponse: ErrorMessage<"join-response">) => {
         expect(joinResponse).toEqual({ type: "join-response", error: expect.any(Array) });
       });
-      sendSerialized(ws, { type: "join", payload: { publicKey, userName } });
+      client.send({ type: "join", payload: { publicKey, userName } });
       await assertFailure;
     });
   });
   describe("success", () => {
     it("accepts a websocket connection", async () => {
-      const ws = new WebSocket(wsAddress);
-      wsToCleanUp.push(ws);
-      await once(ws, "open");
-      const waitForPong = once(ws, "pong");
-      ws.ping();
+      const client = await testClientBuilder.connect("pinging-client");
+      const waitForPong = once(client.ws, "pong");
+      client.ws.ping();
       await waitForPong;
     });
     it("allows to join with valid data", async () => {
-      const userId = "userId1";
-      const userName = "userName1";
-      const { publicKey } = await generateKeys("some-password");
-      jest.spyOn(nodeCrypto, "randomUUID").mockReturnValueOnce(userId);
+      const client = await testClientBuilder.connect("client-trying-to-join-twice");
+      const { userName, publicKey } = client;
 
-      const ws = new WebSocket(wsAddress);
-      wsToCleanUp.push(ws);
-      const assertion = assertMessageOnce(ws, (joinResponse: Message<"join-response">) => {
+      const assertion = client.assertMessageOnce((joinResponse: Message<"join-response">) => {
         expect(joinResponse.type).toEqual("join-response");
-        expect(joinResponse.payload).toEqual({ userId, userName });
+        expect(joinResponse.payload).toEqual({ userId: expect.any(String), userName });
       });
-      await once(ws, "open");
-      sendSerialized(ws, { type: "join", payload: { publicKey, userName } });
+      client.send({ type: "join", payload: { publicKey, userName } });
       await assertion;
     });
   });
