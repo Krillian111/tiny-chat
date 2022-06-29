@@ -2,7 +2,6 @@
   "name": "@tiny-chat/backend",
   "version": "1.0.0",
   "description": "backend for tiny-chat",
-  "main": "dist/index.js",
   "scripts": {
     "format": "prettier . --write --ignore-path .gitignore",
     "lint": "eslint . --ext .ts --max-warnings 0",

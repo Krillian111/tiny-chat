@@ -4,6 +4,12 @@ Inspired by [tinyprojects.dev](https://tinyprojects.dev/) I wanted to build a ve
 
 ## What I am trying out in this project (+ lessons learned)
 
+### General
+
+- experiment with new new project file structure and naming convention
+
+### Backend
+
 - `fastify` as a webserver
   - (+) built-in logging, schema-based validation, websocket support
   - (+) plugin system enables nicely modularized code
@@ -15,7 +21,6 @@ Inspired by [tinyprojects.dev](https://tinyprojects.dev/) I wanted to build a ve
 - design the chat API via messages within the websocket connection
   (-) feels a bit hacky as of now as I am implementing some of the nuts and bolts (serialization, validation) more manually than I would for REST.
   (-) cannot leverage input/schema validation of `fastify`
-- experiment with new new project file structure and naming convention
 - delay persistence layer implementation as long as possible
   (+) allows for collecting all the requirements before assessing what's the best fit
 
