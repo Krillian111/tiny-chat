@@ -3,8 +3,9 @@ export interface Message<Type extends string, Payload = unknown> {
   payload: Payload;
 }
 
-export interface SignedMessage<Type extends string> extends Message<Type> {
-  payload: { userId: string };
+export interface SignedMessage<Type extends string, AdditionalPayload>
+  extends Message<Type, { userId: string }> {
+  payload: AdditionalPayload & { userId: string };
   signature: string;
 }
 
@@ -13,17 +14,16 @@ export interface ErrorMessage<Type extends string> {
   error?: unknown[];
 }
 
-export function isErrorMessage<T extends string>(
-  type: string,
+export function isErrorMessage(
   msg: unknown
-): msg is ErrorMessage<T> {
-  const msgToCheck = msg as ErrorMessage<T>;
-  return msgToCheck.type === type && !!msgToCheck.error;
+): msg is Omit<ErrorMessage<"">, "type"> {
+  const msgToCheck = msg as ErrorMessage<"">;
+  return !!msgToCheck.error;
 }
 
 export type ClientMessage<Type extends string> =
   | Message<Type>
-  | SignedMessage<Type>;
+  | SignedMessage<Type, {}>;
 
 export type ServerMessage<Type extends string, Payload = unknown> =
   | Message<Type, Payload>
@@ -34,12 +34,22 @@ export type JoinMessage = Message<
   { userName: string; publicKey: string }
 >;
 
-export type JoinResponse = ServerMessage<
+export type RoomMessage = SignedMessage<"room", {}>;
+export type SendMessage = SignedMessage<"send", { message: string }>;
+export type SignedMessages = RoomMessage | SendMessage;
+
+export type User = string;
+export type ChatMessage = {
+  message: string;
+  id: string;
+  userName: string;
+};
+
+export type RoomSuccessResponse = Message<
+  "room-response",
+  { users: User[]; messages: ChatMessage[] }
+>;
+export type JoinSuccessResponse = Message<
   "join-response",
   { userId: string; userName: string }
 >;
-
-export type RoomMessage = SignedMessage<"room">;
-
-export type User = string;
-export type RoomResponse = ServerMessage<"room-response", { users: User[] }>;

@@ -1,14 +1,16 @@
 import { createSignature, generateKeyPair } from "./crypto";
 import {
+  ChatMessage,
   isErrorMessage,
   JoinMessage,
-  JoinResponse,
+  JoinSuccessResponse,
   Message,
   RoomMessage,
-  RoomResponse,
-  SignedMessage,
+  RoomSuccessResponse,
+  SendMessage,
+  SignedMessages,
 } from "./ChatSocket.types";
-import { createContext, PropsWithChildren } from "react";
+import { createContext, PropsWithChildren, useContext } from "react";
 
 class ChatSocket {
   private readonly ws: WebSocket;
@@ -17,6 +19,7 @@ class ChatSocket {
   userId: string = "";
   users: ReadonlyArray<string> = [];
   lastErrors: ReadonlyArray<string> = [];
+  messages: ReadonlyArray<ChatMessage> = [];
 
   constructor(host: string) {
     const ws = new WebSocket(`ws://${host}/chat`);
@@ -24,27 +27,37 @@ class ChatSocket {
     this.ws = ws;
   }
 
-  isReady(): boolean {
+  private isWsReady(): boolean {
     return this.ws.readyState === this.ws.OPEN;
   }
 
-  assertReady() {
-    if (this.isReady()) {
+  private assertReady() {
+    if (this.isWsReady()) {
       return;
     }
     throw new Error(`Websocket not open, instead: ${this.ws.readyState}`);
   }
 
-  assertJoined() {
+  private assertJoined() {
     if (this.keys && this.userId && this.userName) {
       return true;
     }
     throw new Error("Client has not joined yet");
   }
 
-  send(msg: Message<string, unknown>) {
+  private sendWsMessage(msg: Message<string, unknown>) {
     this.assertReady();
     this.ws.send(JSON.stringify(msg));
+  }
+
+  isReadyFor(command: "join" | "room" | "send"): boolean {
+    switch (command) {
+      case "join":
+        return this.isWsReady();
+      case "room":
+      case "send":
+        return !!this.userId;
+    }
   }
 
   async join(userName: string) {
@@ -58,38 +71,56 @@ class ChatSocket {
         userName,
       },
     };
-    this.send(joinMessage);
+    this.sendWsMessage(joinMessage);
   }
 
-  async sign<T extends string>(
-    msg: Message<T, { userId: string }>
-  ): Promise<SignedMessage<T>> {
+  async sign<SigMes extends SignedMessages>(
+    msg: Omit<SigMes, "signature">
+  ): Promise<SigMes> {
     this.assertJoined();
     const signature = await createSignature(
       msg.payload,
       (this.keys as { privateKey: CryptoKey }).privateKey
     );
-    return { ...msg, signature };
+    return { ...msg, signature } as SigMes;
   }
 
   async room() {
-    const roomMessage: RoomMessage = await this.sign<"room">({
+    const roomMessage: RoomMessage = await this.sign<RoomMessage>({
       type: "room",
       payload: {
         userId: this.userId,
       },
     });
-    this.send(roomMessage);
+    this.sendWsMessage(roomMessage);
   }
 
-  handleMessage(messageEvent: MessageEvent) {
+  async send(message: string) {
+    const sendMessage: SendMessage = await this.sign<SendMessage>({
+      type: "send",
+      payload: {
+        userId: this.userId,
+        message,
+      },
+    });
+    this.sendWsMessage(sendMessage);
+  }
+
+  private handleMessage(messageEvent: MessageEvent) {
     try {
       const data = JSON.parse(messageEvent.data);
+      if (isErrorMessage(data)) {
+        this.lastErrors = data.error?.map((err) => JSON.stringify(err)) ?? [];
+        return;
+      }
       switch (data.type) {
         case "join-response":
-          return this.handleJoinResponse(data as JoinResponse);
+          return this.handleJoinResponse(data as JoinSuccessResponse);
         case "room-response":
-          return this.handleRoomResponse(data as RoomResponse);
+          return this.handleRoomResponse(data as RoomSuccessResponse);
+        case "send-response":
+          this.room();
+          return;
         default:
           return console.error("Handling not implemented", data);
       }
@@ -98,23 +129,22 @@ class ChatSocket {
     }
   }
 
-  handleJoinResponse(joinResponse: JoinResponse) {
-    if (isErrorMessage("join-response", joinResponse)) {
-      this.lastErrors =
-        joinResponse.error?.map((err) => JSON.stringify(err)) ?? [];
-    } else {
-      this.userId = joinResponse.payload.userId;
-      this.userName = joinResponse.payload.userName;
-    }
+  private handleJoinResponse(joinResponse: JoinSuccessResponse) {
+    this.userId = joinResponse.payload.userId;
+    this.userName = joinResponse.payload.userName;
+    // TODO: replace polling with broadcast by server
+    this.room();
+    const pollRoom = setInterval(() => {
+      this.room();
+    }, 3000);
+    this.ws.addEventListener("close", () => {
+      clearInterval(pollRoom);
+    });
   }
 
-  handleRoomResponse(roomResponse: RoomResponse) {
-    if (isErrorMessage("room-response", roomResponse)) {
-      this.lastErrors =
-        roomResponse.error?.map((err) => JSON.stringify(err)) ?? [];
-    } else {
-      this.users = roomResponse.payload.users;
-    }
+  private handleRoomResponse(roomResponse: RoomSuccessResponse) {
+    this.users = roomResponse.payload.users;
+    this.messages = roomResponse.payload.messages;
   }
 
   subscribeToMessage(callback: (cs: ChatSocket) => void): () => void {
@@ -126,7 +156,9 @@ class ChatSocket {
 
 const chatSocket = new ChatSocket("localhost:3001");
 
-export const ChatSocketContext = createContext(chatSocket);
+const ChatSocketContext = createContext(chatSocket);
+export const useChatSocket = () => useContext(ChatSocketContext);
+
 export function ChatSocketProvider(props: PropsWithChildren) {
   return (
     <ChatSocketContext.Provider value={chatSocket}>

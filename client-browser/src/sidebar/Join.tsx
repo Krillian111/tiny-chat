@@ -1,14 +1,14 @@
-import { useContext, useState } from "react";
-import { ChatSocketContext } from "../network/ChatSocket";
+import { useState } from "react";
+import { useChatSocket } from "../network/ChatSocket";
 
 export default function Join(props: { userName: string }) {
   const [pickedUserName, setPickedUserName] = useState("");
-  const chatSocket = useContext(ChatSocketContext);
+  const chatSocket = useChatSocket();
 
   const onClick = () => {
     chatSocket.join(pickedUserName);
   };
-  const joinSuccessful = !!props.userName;
+  const joinSuccessful = chatSocket.isReadyFor("room");
   return (
     <div className="border border-5">
       {!joinSuccessful && (
@@ -32,7 +32,9 @@ export default function Join(props: { userName: string }) {
           </button>
         </>
       )}
-      {joinSuccessful && <div>Username: {chatSocket.userName}</div>}
+      {joinSuccessful && (
+        <div className="fs-4">Username: {chatSocket.userName}</div>
+      )}
     </div>
   );
 }

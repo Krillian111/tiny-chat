@@ -13,8 +13,9 @@
 
 ### Next
 
+- prevent impersonation by someone rejoining with username of someone who just left (some timeout before username can be reused?)
 - add Dockerfile + Kubernetes setup
-- broadcast users joining/exiting to all
+- broadcast users joining/exiting and new messages to all
 
 ## Frontend
 
