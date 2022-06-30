@@ -15,16 +15,43 @@ export async function generateKeyPair(): Promise<{
   return { privateKey: keys.privateKey, publicKey: publicKeyAsPem };
 }
 
+export async function createSignature(
+  toSign: unknown,
+  privateKey: CryptoKey
+): Promise<string> {
+  const toSignAsString = JSON.stringify(toSign);
+  const toSignAsTypedArray = utf8ToUint8array(toSignAsString);
+  const sigAsArrayBuffer = await window.crypto.subtle.sign(
+    privateKey.algorithm,
+    privateKey,
+    toSignAsTypedArray
+  );
+  return arrayBufferToBase64(sigAsArrayBuffer);
+}
+
 async function convertToPem(key: CryptoKey): Promise<string> {
   const exported = await window.crypto.subtle.exportKey("spki", key);
-  const exportedAsString = ab2str(exported);
-  const exportedAsBase64 = window.btoa(exportedAsString);
+  const exportedAsBase64 = await arrayBufferToBase64(exported);
   return `-----BEGIN PUBLIC KEY-----\n${exportedAsBase64}\n-----END PUBLIC KEY-----`;
 }
 
-function ab2str(buf: ArrayBuffer) {
-  return String.fromCharCode.apply(
-    null,
-    new Uint8Array(buf) as unknown as number[]
-  );
+export async function arrayBufferToBase64(
+  arrayBuffer: ArrayBuffer
+): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("loadend", () => {
+      if (typeof reader.result === "string") {
+        return resolve(reader.result.split("base64,")[1]);
+      }
+      reject("Could not read arrayBuffer");
+    });
+
+    const blob = new Blob([arrayBuffer]);
+    reader.readAsDataURL(blob);
+  });
+}
+
+function utf8ToUint8array(base64string: string): Uint8Array {
+  return new TextEncoder().encode(base64string);
 }

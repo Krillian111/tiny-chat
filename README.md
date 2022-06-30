@@ -24,6 +24,14 @@ Inspired by [tinyprojects.dev](https://tinyprojects.dev/) I wanted to build a ve
 - delay persistence layer implementation as long as possible
   (+) allows for collecting all the requirements before assessing what's the best fit
 
+### Frontend (Browser/React)
+
+- Try to work without state library for simplicity
+  - Use class to keep websocket-related state
+  - subscribe root component to changes and persist them via `useState`
+  - drill down states to child components
+  - obviously ineffecient as a lot of unnecessary rerenders are triggered; could be improved by memoization of different components
+
 ## Requirements
 
 - Users can generate room with unique, generated room_id

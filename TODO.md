@@ -21,6 +21,6 @@
 - Write tests
   - is there a nock equivalent for websockets or do I just implement a mock version of the server websocket?
   - write e2e test by starting both frontend+backend and use something like puppeteer?
-- Add reconnection support
+- Add reconnection support && deal with multiple joins
 - Deal with "timeouts", i.e. when no corresponding message is observed
 - Exectue crypto operations in webworker thread (to get familiar with API and practice offloading computation extensive tasks)

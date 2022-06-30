@@ -23,10 +23,9 @@ describe("/chat (room)", () => {
   });
   describe("errors", () => {
     it("fails if user is not in a room", async () => {
-      const passphrase = "some-password";
-      const { privateKey: unknownPrivateKey } = await generateKeys(passphrase);
+      const { privateKey: unknownPrivateKey } = await generateKeys();
       const payload = { userId: "some-user-id" };
-      const signatureWithUnknownKey = await signPayload(payload, unknownPrivateKey, passphrase);
+      const signatureWithUnknownKey = await signPayload(payload, unknownPrivateKey);
 
       const testClient = await testClientBuilder.connect("client-which-does-not-join");
       const assertion = testClient.assertMessageOnce((roomResponse: ErrorMessage<"room-response">) => {
@@ -40,9 +39,8 @@ describe("/chat (room)", () => {
     it("fails if payload is not signed with matching privateKey", async () => {
       let userId;
       const userName = "invalid-sig-userName";
-      const passphrase = "some-password";
-      const { publicKey } = await generateKeys(passphrase);
-      const { privateKey: unknownPrivateKey } = await generateKeys(passphrase);
+      const { publicKey } = await generateKeys();
+      const { privateKey: unknownPrivateKey } = await generateKeys();
 
       const testClient = await testClientBuilder.connect("client-signing-with-wrong-key");
       testClient.send({ type: "join", payload: { publicKey, userName } });
@@ -54,7 +52,7 @@ describe("/chat (room)", () => {
         expect(roomResponse).toEqual({ type: "room-response", error: ["Message contains invalid signature"] });
       });
       const payloadToSign = { userId };
-      const signatureWithUnknownKey = await signPayload(payloadToSign, unknownPrivateKey, passphrase);
+      const signatureWithUnknownKey = await signPayload(payloadToSign, unknownPrivateKey);
       testClient.send({ type: "room", payload: payloadToSign, signature: signatureWithUnknownKey });
       await assertOneUser;
     });

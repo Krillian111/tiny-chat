@@ -1,19 +1,14 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { ChatSocketContext } from "../network/ChatSocket";
 
-export default function Join() {
+export default function Join(props: { userName: string }) {
   const [pickedUserName, setPickedUserName] = useState("");
   const chatSocket = useContext(ChatSocketContext);
-  const [, triggerRerender] = useState(0);
-  useEffect(() => {
-    const cleanUp = chatSocket.subscribeToMessage(() => {
-      triggerRerender((val) => val + 1);
-    });
-    return cleanUp;
-  });
 
-  const onClick = () => chatSocket.join(pickedUserName);
-  const joinSuccessful = !!chatSocket.userName;
+  const onClick = () => {
+    chatSocket.join(pickedUserName);
+  };
+  const joinSuccessful = !!props.userName;
   return (
     <div className="border border-5">
       {!joinSuccessful && (
@@ -38,14 +33,6 @@ export default function Join() {
         </>
       )}
       {joinSuccessful && <div>Username: {chatSocket.userName}</div>}
-
-      {!joinSuccessful && chatSocket.lastErrors && (
-        <>
-          {chatSocket.lastErrors.map((error) => (
-            <span>{error}</span>
-          ))}
-        </>
-      )}
     </div>
   );
 }

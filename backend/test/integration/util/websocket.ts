@@ -51,7 +51,7 @@ class TestClientBuilder {
     await once(ws, "open");
 
     const passphrase = randomUUID();
-    const { privateKey, publicKey } = await generateKeys(passphrase);
+    const { privateKey, publicKey } = await generateKeys();
     return new TestClient({ ws, userName, privateKey, publicKey, passphrase });
   }
 }
@@ -93,7 +93,7 @@ class TestClient {
 
   async sendWithUserIdAndSigned(type: string, payloadWithoutUserId: Record<string, unknown>) {
     const payload = { ...payloadWithoutUserId, userId: this.userId };
-    const signature = await testOnly.signPayload(payload, this.privateKey, this.passphrase);
+    const signature = await testOnly.signPayload(payload, this.privateKey);
     return sendSerialized(this.ws, { type, payload, signature });
   }
 

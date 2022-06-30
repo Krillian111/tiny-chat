@@ -3,16 +3,6 @@ export interface Message<Type extends string, Payload = unknown> {
   payload: Payload;
 }
 
-export type JoinMessage = Message<
-  "join",
-  { userName: string; publicKey: string }
->;
-
-export type JoinResponse = ServerMessage<
-  "join-response",
-  { userId: string; userName: string }
->;
-
 export interface SignedMessage<Type extends string> extends Message<Type> {
   payload: { userId: string };
   signature: string;
@@ -38,3 +28,18 @@ export type ClientMessage<Type extends string> =
 export type ServerMessage<Type extends string, Payload = unknown> =
   | Message<Type, Payload>
   | ErrorMessage<Type>;
+
+export type JoinMessage = Message<
+  "join",
+  { userName: string; publicKey: string }
+>;
+
+export type JoinResponse = ServerMessage<
+  "join-response",
+  { userId: string; userName: string }
+>;
+
+export type RoomMessage = SignedMessage<"room">;
+
+export type User = string;
+export type RoomResponse = ServerMessage<"room-response", { users: User[] }>;
