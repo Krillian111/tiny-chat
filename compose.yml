@@ -1,0 +1,18 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: tiny-chat/backend
+    ports:
+      - '3001:3001'
+    environment:
+      - PORT=3001
+  clientBrowser:
+    build:
+      context: ./client-browser
+      dockerfile: Dockerfile
+    image: tiny-chat/client-browser
+    ports:
+      - '3000:3000'
+
