@@ -6,8 +6,14 @@ export default function Room(props: { users: ReadonlyArray<User> }) {
 
   const onClick = () => chatSocket.room();
   return (
-    <div className="border border-5">
-      <button
+    <div className="border border-5 p-2">
+      <div className="fs-4">Users ({props.users.length})</div>
+      <ul className="fs-5">
+        {props.users.map((user) => (
+          <li key={user}>{user}</li>
+        ))}
+      </ul>
+        <button
         type="button"
         className="btn btn-primary m-1"
         onClick={onClick}
@@ -15,12 +21,6 @@ export default function Room(props: { users: ReadonlyArray<User> }) {
       >
         Manually refresh
       </button>
-      <div className="fs-4">Users ({props.users.length})</div>
-      <ul className="fs-5">
-        {props.users.map((user) => (
-          <li key={user}>{user}</li>
-        ))}
-      </ul>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useChatSocket } from "../network/ChatSocket";
 
-export default function Join(props: { userName: string }) {
+export default function Join() {
   const [pickedUserName, setPickedUserName] = useState("");
   const chatSocket = useChatSocket();
 
@@ -10,7 +10,8 @@ export default function Join(props: { userName: string }) {
   };
   const joinSuccessful = chatSocket.isReadyFor("room");
   return (
-    <div className="border border-5">
+    <div className="border border-5 mb-3 p-2">
+      <h2>Lobby</h2>
       {!joinSuccessful && (
         <>
           <label htmlFor="userName" className="m-1">
@@ -20,6 +21,7 @@ export default function Join(props: { userName: string }) {
             id="userName"
             className="m-1 w-75"
             value={pickedUserName}
+            placeholder={"Enter username and 'Join'"}
             onChange={(e) => setPickedUserName(e.target.value)}
           ></input>
           <button
@@ -28,7 +30,7 @@ export default function Join(props: { userName: string }) {
             disabled={!pickedUserName}
             onClick={onClick}
           >
-            Join lobby
+            Join
           </button>
         </>
       )}

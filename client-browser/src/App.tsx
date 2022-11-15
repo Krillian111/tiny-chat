@@ -9,13 +9,11 @@ import { SendMessage } from "./chat/SendMessage";
 
 export default function App() {
   const chatSocket = useChatSocket();
-  const [userName, setUserName] = useState("");
   const [users, setUsers] = useState<ReadonlyArray<User>>([]);
   const [errors, setErrors] = useState<ReadonlyArray<string>>([]);
   const [messages, setMessages] = useState<ReadonlyArray<ChatMessage>>([]);
   useEffect(() => {
     return chatSocket.subscribeToMessage((cs) => {
-      setUserName(cs.userName);
       setUsers(cs.users);
       setErrors(cs.lastErrors);
       setMessages(cs.messages);
@@ -26,13 +24,13 @@ export default function App() {
       <div className="container">
         <div className="row align-items-start">
           <div className="col-9 vh-100">
-            <h1>tiny-chat</h1>
-            <SendMessage />
             <ErrorPage errors={errors} />
             <DisplayMessages messages={messages} />
+            <SendMessage />
           </div>
           <div className="col-3">
-            <Join userName={userName} />
+            <h1 className={"mt-2"}>tiny-chat</h1>
+            <Join />
             <Room users={users} />
           </div>
         </div>
