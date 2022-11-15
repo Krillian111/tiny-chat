@@ -1,6 +1,7 @@
 # tiny-chat
 
-Inspired by [tinyprojects.dev](https://tinyprojects.dev/) I wanted to build a very simplified browser room client. The goal is not to monetize anything but to double check that I am not missing any of the skills involved in doing so.
+Inspired by [tinyprojects.dev](https://tinyprojects.dev/) I wanted to build a very simplified browser room client. The
+goal is to play around with some new technologies/libraries.
 
 See [my blog](https://blog.krillian.dev/projects/tiny-chat) for lessons learned.
 

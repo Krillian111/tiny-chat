@@ -14,13 +14,12 @@ export default function App() {
   const [errors, setErrors] = useState<ReadonlyArray<string>>([]);
   const [messages, setMessages] = useState<ReadonlyArray<ChatMessage>>([]);
   useEffect(() => {
-    const cleanUp = chatSocket.subscribeToMessage((cs) => {
+    return chatSocket.subscribeToMessage((cs) => {
       setUserName(cs.userName);
       setUsers(cs.users);
       setErrors(cs.lastErrors);
       setMessages(cs.messages);
     });
-    return cleanUp;
   });
   return (
     <ChatSocketProvider>
